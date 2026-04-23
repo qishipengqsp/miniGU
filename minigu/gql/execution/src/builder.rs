@@ -71,7 +71,7 @@ impl ExecutorBuilder {
                             .downcast_arc::<GraphContainer>()
                             .expect("failed to downcast to GraphContainer");
 
-                        let mut property_names = Vec::new();
+                        let mut property_info = Vec::new();
                         let property_list = if let Some(label_specs) =
                             child_schema.get_var_label(var_name)
                         {
@@ -83,7 +83,11 @@ impl ExecutorBuilder {
                             {
                                 for property in vertex_type.properties().iter() {
                                     property_ids.push(property.0);
-                                    property_names.push(property.1.name().to_string());
+                                    property_info.push((
+                                        property.1.name().to_string(),
+                                        property.1.logical_type().clone(),
+                                        property.1.nullable(),
+                                    ));
                                 }
                             }
                             property_ids
@@ -98,12 +102,12 @@ impl ExecutorBuilder {
                         ));
 
                         let mut new_fields = updated_schema.fields().to_vec();
-                        for prop_name in &property_names {
+                        for (prop_name, prop_type, prop_nullable) in property_info.iter() {
                             let qualified_name = format!("{}_{}", var_name, prop_name);
                             new_fields.push(DataField::new(
                                 qualified_name,
-                                LogicalType::String,
-                                true,
+                                prop_type.clone(),
+                                *prop_nullable,
                             ));
                         }
                         updated_schema = Arc::new(DataSchema::new(new_fields));
@@ -250,7 +254,7 @@ impl ExecutorBuilder {
                                 .downcast_arc::<GraphContainer>()
                                 .expect("failed to downcast to GraphContainer");
 
-                            let mut property_names = Vec::new();
+                            let mut property_info = Vec::new();
                             let property_list = if let Some(label_specs) =
                                 output_schema.get_var_label(var_name.as_str())
                             {
@@ -263,7 +267,11 @@ impl ExecutorBuilder {
                                 {
                                     for property in vertex_type.properties().iter() {
                                         property_ids.push(property.0);
-                                        property_names.push(property.1.name().to_string());
+                                        property_info.push((
+                                            property.1.name().to_string(),
+                                            property.1.logical_type().clone(),
+                                            property.1.nullable(),
+                                        ));
                                     }
                                 }
 
@@ -279,12 +287,12 @@ impl ExecutorBuilder {
                             ));
 
                             let mut new_fields = updated_schema.fields().to_vec();
-                            for prop_name in property_names.iter() {
+                            for (prop_name, prop_type, prop_nullable) in property_info.iter() {
                                 let qualified_name = format!("{}_{}", var_name, prop_name);
                                 new_fields.push(DataField::new(
                                     qualified_name,
-                                    LogicalType::String,
-                                    true,
+                                    prop_type.clone(),
+                                    *prop_nullable,
                                 ));
                             }
                             updated_schema = Arc::new(DataSchema::new(new_fields));
